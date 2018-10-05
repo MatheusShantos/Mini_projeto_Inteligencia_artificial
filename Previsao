@@ -1,0 +1,88 @@
+from sklearn.svm import SVC
+import csv
+from os.path import dirname
+from os.path import join
+from sklearn.model_selection import cross_val_score
+import numpy as np
+from sklearn import decomposition
+
+class Bunch(dict):
+    def __init__(self, **kwargs):
+        dict.__init__(self, kwargs)
+        self.__dict__ = self
+
+def load_csv(csv_name):
+    module_path = dirname(".")
+    with open(join(module_path, 'data', csv_name)) as csv_file:
+        data_file = csv.reader(csv_file)
+        temp = next(data_file)
+        n_samples = int(temp[0])
+        n_features = int(temp[1])
+        target_names = np.array(temp[2:])
+        data = np.empty((n_samples, n_features))
+        target = np.empty((n_samples,), dtype=np.int)
+
+        for i, ir in enumerate(data_file):
+            data[i] = np.asarray(ir[:-1], dtype=np.int)
+            target[i] = np.asarray(ir[-1], dtype=np.int)
+
+    return Bunch(data=data, target=target,
+                 target_names=target_names,
+                 feature_names=['', '', '', ''])
+
+def cross_val(classifier, examples, target, k_attr):
+    # Se quiser erro medio quadratico, usar ', scoring='neg_mean_squared_error'' e multiplicar media por -1
+    correct_predictions = cross_val_score(classifier, examples, target, cv=k_attr);
+
+    return correct_predictions.mean()
+
+##############################################
+
+clf = SVC()
+
+data = load_csv('previsaoDoTempo.csv')
+
+clf = clf.fit(data.data, data.target)
+
+rate = cross_val(clf, data.data, data.target, 3)
+
+print("Taxa de acerto na classificacao: ", round(rate * 100,2), "%")
+
+print("\nTEMPERATURA ATMÓSFERICA\n Insira 0 - para gelada, 1 - para fria, 2 - para morna, 3 - para quente\n")
+temperatura = input("Informe a temperatura: ")
+
+print("\nNEBULOSIDADE DO CÉU\nInsira 0 - para nublado, 1 - para quase nublado, 2 - para parcialmente nublado, 3 - para pouco nublado, 4 - para quase limpo, 5 - para céu limpo\n")
+nebulosidade = input("Informe a nebulosidade do céu: ")
+
+print("\nUMIDADE RELATIVA DO AR\nInsira 0 - para ideal, 1 - para atenção, 2 - para alerta, 3 - para emergência\n")
+umidade = input("Informe a umidade do ar: ")
+
+print("\nPRESSÂO ATMÓSFERICA\nInsira 0 - para baixa, 1 - para alta \n")
+pressao = input("Informe a pressão atmósferica: ")
+
+print("\nVELOCIDADE DO VENTO\nInsira 0 - para tempestade, 1 -  para ventania forte, 2 - para ventania, 3 - para vento forte, 4 - para vento fresco, 5 - para brisa forte, 6 - para brisa moderada, 7 - para brisa fraca, 8 - brisa leve\n")
+velocidade = input("Informe a velocidade do vento: ")
+
+print("\nREGIÃO\n Insira 0 - para sul, 1 - para suldeste, 2 - para centro-oeste, 3 - para nordeste, 4 - para norte\n")
+regiao = input("Informe a região em que se encontra: ")
+
+print("\nESTAÇÃO DO ANO\nInsira 0 - inverno, 1 - para outono, 2 - para primavera, 3 - para verão\n")
+estacao = input("Informe a estação do ano: ")
+
+entrada = [[temperatura,nebulosidade,umidade,pressao,velocidade,regiao,estacao]]
+
+resultado = clf.predict(entrada)
+
+if resultado == 0:
+    print("Dia Chuvoso")
+if resultado == 1:
+    print("Grande chance de chuva")
+if resultado == 2:
+    print("Pequena chance de chuva")
+if resultado == 3:
+    print(" Dia sem chuva")
+
+#pca = decomposition.PCA(n_components=1)
+#pca.fit(data.data)
+#X = pca.transform(data.data)
+#print(X)
